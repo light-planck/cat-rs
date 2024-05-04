@@ -30,10 +30,33 @@ pub fn get_args() -> Args {
 }
 
 pub fn run(args: Args) -> MyResult<()> {
-    for filename in args.files {
+    for filename in &args.files {
         match open(&filename) {
-            Err(err) => eprintln!("Failed to oepn {}: {}", filename, err),
-            Ok(_) => println!("Opened {}", filename),
+            Err(err) => eprintln!("{filename}: {err}"),
+            Ok(file) => {
+                let mut line_number = 1;
+
+                for line in file.lines() {
+                    let line = line?;
+
+                    match (args.number_lines, args.number_nonblank_lines) {
+                        (false, false) => println!("{}", line),
+                        (true, false) => {
+                            println!("{:>6}\t{}", line_number, line);
+                            line_number += 1;
+                        }
+                        (false, true) => {
+                            if line.is_empty() {
+                                println!();
+                            } else {
+                                println!("{:>6}\t{}", line_number, line);
+                                line_number += 1;
+                            }
+                        }
+                        (true, true) => unreachable!(),
+                    }
+                }
+            }
         }
     }
 
